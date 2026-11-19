@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: multi-threaded-log-analysis-and-alerting-system
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:inventory_db}?sslmode=disable
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+      pool-name: QuickCommerce-HikariPool
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# JWT & Security Configuration
+security:
+  jwt:
+    secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    access-token-expiration-ms: 1800000      # 30 minutes
+    refresh-token-expiration-ms: 604800000   # 7 days
+  rate-limit:
+    capacity: 20
+    refill-per-second: 5.0
+  lockout:
+    max-failed-attempts: 5
+    duration-minutes: 15
+
+# Engine Configurations
+inventory:
+  sync:
+    mode: LOCK       # NONE, LOCK, DB_ONLY, OPTIMISTIC
+    artificial-delay-ms: 0
+
+app:
+  os:
+    queue-capacity: 5000
+    worker-pool-size: 8
+    backpressure-timeout-ms: 500
+  dsa:
+    sliding-window-count: 100
+    sliding-window-seconds: 60
+    top-k-size: 5
+  alert:
+    early-warning-factor: 1.2
+    critical-low-factor: 0.5
+    order-failure-threshold: 3
+    restock-failure-threshold: 3
+    abnormal-consumption-factor: 2.5
+    webhook-url: ""
+    webhook-secret: "qc-alert-webhook-hmac-secret-key"
+
+# Actuator & Telemetry
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
